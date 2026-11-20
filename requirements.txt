@@ -1,0 +1,7 @@
+langchain
+langgraph
+ddgs
+requests
+trafilatura
+langchain-google-genai
+python-dotenv

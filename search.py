@@ -8,7 +8,7 @@ headers = {
         "User-Agent": "ResearchBot/1.0 (educational research)"
 }
 
-def search_web(query):
+def search_web(query:str):
     # Maximum 10 try to fetch any web data
     max_retry = 10
     count = 1
@@ -63,7 +63,7 @@ def search_web(query):
         
         # After fecthing one url sleep before fetching new url
         time.sleep(1)
-    convert_to_csv_json(research_data)
+    return research_data
 
 
 def convert_to_csv_json(research_data:list):
