@@ -4,7 +4,8 @@ from nodes import (
     researcher_node,
     generator_node,
     evaluator_node,
-    save_response_node
+    save_response_node,
+    rag_retriver_node
 )
 
 from state import ResearchState
@@ -20,10 +21,19 @@ workflow.add_node("researcher",researcher_node)
 workflow.add_node("generator",generator_node)
 workflow.add_node("evaluator",evaluator_node)
 workflow.add_node("save_response", save_response_node)
+workflow.add_node("rag_retriever",rag_retriver_node)
 
 # Add edges
 workflow.add_edge(START, "analyzer")
-workflow.add_edge("analyzer", "planner")
+workflow.add_edge(
+    "analyzer",
+    "rag_retriever"
+)
+
+workflow.add_edge(
+    "rag_retriever",
+    "planner"
+)
 workflow.add_edge("planner", "researcher")
 workflow.add_edge("researcher", "generator")
 workflow.add_edge("generator", "evaluator")

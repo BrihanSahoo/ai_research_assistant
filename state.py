@@ -13,6 +13,8 @@ class ResearchState(TypedDict):
 
     # Research results
     research_results: List[dict]
+    
+    rag_results : List[dict]
 
     # Generated answer
     answer: str

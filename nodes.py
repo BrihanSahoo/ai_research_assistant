@@ -3,6 +3,7 @@ from state import ResearchState
 from tools import search_tool
 import json
 from langchain.messages import AIMessage
+from vectorstore import retriver
 
 
 
@@ -76,6 +77,7 @@ def planer_node(state:ResearchState):
     
     question = state['question']
     analysis = state['analysis']
+    rag_results = state.get("rag_results", [])
     
     prompt = f"""
     You are an expert research planner.
@@ -86,14 +88,17 @@ def planer_node(state:ResearchState):
     Query Analysis:
     {analysis}
 
-    Break this research task into 3 to 5
-    specific and independent search queries.
+    Knowledge Retrieved from Local Database:
+    {rag_results}
+
+    Create 3 to 5 specific search queries.
 
     Requirements:
-    1. Cover all important aspects.
-    2. Avoid duplicate queries.
-    3. Each query should be useful for research.
-    4. Keep queries specific.
+    1. Identify information already available locally.
+    2. Identify missing information.
+    3. Generate queries to find missing information.
+    4. Avoid duplicate searches.
+    5. Focus on relevant and useful information.
 
     Return one query per line.
     Do not include numbering or explanations.
@@ -141,7 +146,13 @@ def generator_node(state: ResearchState):
 
     question = state["question"]
     analysis = state["analysis"]
+
+    # Existing web research
     research = state["research_results"]
+
+    # New RAG results
+    rag_results = state.get("rag_results", [])
+
     feedback = state.get("feedback", "")
 
     messages = state.get("messages", [])
@@ -159,7 +170,10 @@ def generator_node(state: ResearchState):
     Question analysis:
     {analysis}
 
-    Research evidence:
+    Retrieved Knowledge from Local Vector Database:
+    {rag_results}
+
+    Fresh Web Research:
     {research}
 
     Evaluator feedback:
@@ -167,13 +181,15 @@ def generator_node(state: ResearchState):
 
     Instructions:
 
-    1. Answer the latest question.
+    1. Answer the latest user question.
     2. Use previous conversation when relevant.
-    3. Use the provided research evidence.
-    4. Do not invent unsupported facts.
-    5. If the user asks a follow-up question,
-       maintain continuity with the previous discussion.
-    6. Provide a clear and structured answer.
+    3. Use relevant retrieved documents as knowledge.
+    4. Use web research for additional and current information.
+    5. Do not invent unsupported facts.
+    6. If local documents and web sources disagree,
+       explain the disagreement.
+    7. Maintain continuity for follow-up questions.
+    8. Provide a clear and structured answer.
 
     Generate the final answer.
     """
@@ -269,4 +285,33 @@ def evaluator_node(state: ResearchState):
         "approved": approved,
         "feedback": feedback,
         "iteration": state.get("iteration", 0) + 1
+    }
+
+
+
+
+# RAG retriever node
+def rag_retriver_node(state:ResearchState):
+    question = state['question']
+    analysis = state['analysis']
+    
+    retrieval_query = f"""
+    User question:
+    {question}
+
+    Research objective:
+    {analysis}
+    """
+    
+    documents = retriver.invoke(retrieval_query)
+    
+    rag_contexts = []
+    
+    for doc in documents:
+        rag_contexts.append({
+            'content' : doc.page_content,
+            'metadata' : doc.metadata
+        })
+    return {
+        "rag_results" : rag_contexts
     }
